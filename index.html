@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электрондық журнал</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef2f5; padding: 20px; margin: 0; color: #333; }
+        .container { max-width: 1100px; margin: auto; background: #fff; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); overflow: hidden; }
+        
+        /* Тақырыптық баннер мен сурет */
+        .header-banner {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 12px;
+            padding: 25px 30px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
+        }
+        .header-title-box { display: flex; align-items: center; gap: 20px; }
+        .school-logo { width: 70px; height: 70px; border-radius: 50%; background: #fff; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); object-fit: cover; }
+        .header-text h2 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+        .header-text p { margin: 5px 0 0 0; opacity: 0.85; font-size: 14px; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .analytics-bar { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .stat-card { flex: 1; min-width: 160px; background: #f8fafc; border-top: 4px solid #2a5298; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stat-card h4 { margin: 0 0 6px 0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; }
+        .stat-card span { font-size: 24px; font-weight: bold; color: #1e293b; }
+
+        .btn { padding: 9px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-lang { background: rgba(255,255,255,0.2); color: white; backdrop-filter: blur(5px); }
+        .btn-lang:hover { background: rgba(255,255,255,0.3); }
+        .btn-add { background: #10b981; color: white; }
+        .btn-add:hover { background: #059669; }
+        .btn-export { background: #0ea5e9; color: white; }
+        .btn-print { background: #8b5cf6; color: white; }
+        .btn-import { background: #f59e0b; color: white; }
+        .btn-clear { background: #ef4444; color: white; }
+        .btn:hover { transform: translateY(-1px); }
+
+        .controls, .tools { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        input, select { padding: 10px 14px; font-size: 14px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; transition: 0.2s; }
+        input:focus, select:focus { border-color: #2a5298; box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.15); }
+        input[type="text"] { flex: 1; min-width: 200px; }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; }
+        th, td { border-bottom: 1px solid #e2e8f0; padding: 12px 15px; text-align: center; font-size: 14px; }
+        th { background: #f1f5f9; color: #334155; font-weight: 700; }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) { background: #f8fafc; }
+        tr:hover { background: #f1f5f9; }
+        
+        .student-cell { display: flex; align-items: center; gap: 12px; text-align: left; font-weight: 600; color: #1e293b; }
+        .avatar-img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1; }
+        
+        .grade-input { width: 50px; text-align: center; padding: 6px; font-size: 14px; border-radius: 6px; border: 1px solid #cbd5e1; }
+        
+        /* Түстік индикация */
+        .score-high { background-color: #d1fae5 !important; color: #065f46; font-weight: bold; border-radius: 6px; }
+        .score-mid { background-color: #fef3c7 !important; color: #92400e; font-weight: bold; border-radius: 6px; }
+        .score-low { background-color: #fee2e2 !important; color: #991b1b; font-weight: bold; border-radius: 6px; }
+
+        .delete-btn { background: #fee2e2; color: #991b1b; border: none; padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .delete-btn:hover { background: #fca5a5; }
+
+        /* Модальді терезе */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+        .modal-content { background: white; margin: 8% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-content textarea { width: 100%; height: 140px; margin: 12px 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; }
+
+        @media print {
+            .btn, .controls, .tools, .header-actions, .delete-btn, th:last-child, td:last-child { display: none !important; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            .header-banner { background: #1e3c72 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Шапка суретпен және логотиппен -->
+    <div class="header-banner">
+        <div class="header-title-box">
+            <!-- Эмблема/Логотип суреті -->
+            <img class="school-logo" id="schoolLogo" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231e3c72'><path d='M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z'/></svg>" alt="Logo">
+            <div class="header-text">
+                <h2 id="title">🎓 Электрондық журнал</h2>
+                <p id="subtitle">Оқушылардың үлгерімі мен білім сапасы журналы</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-lang" onclick="toggleLanguage()">🌐 Қаз / Рус</button>
+            <button class="btn btn-print" onclick="window.print()">🖨️ <span id="btnPrint">Басып шығару</span></button>
+            <button class="btn btn-export" onclick="exportToCSV()">📥 Excel (CSV)</button>
+        </div>
+    </div>
+
+    <!-- Аналитика карточкалары -->
+    <div class="analytics-bar">
+        <div class="stat-card"><h4 id="stTotal">Оқушы саны</h4><span id="valTotal">0</span></div>
+        <div class="stat-card"><h4 id="stAvg">Орташа балл</h4><span id="valAvg">0</span></div>
+        <div class="stat-card"><h4 id="stQuality">Білім сапасы (8-10)</h4><span id="valQuality">0%</span></div>
+        <div class="stat-card"><h4 id="stSuccess">Үлгерім (4-10)</h4><span id="valSuccess">0%</span></div>
+    </div>
+
+    <!-- Басқару батырмалары -->
+    <div class="controls">
+        <input type="text" id="studentName" placeholder="Оқушының аты-жөні">
+        <button class="btn btn-add" id="btnAdd" onclick="addStudent()">+ Оқушы қосу</button>
+        <button class="btn btn-import" id="btnImport" onclick="openImportModal()">📋 Excel-ден тізім енгізу</button>
+    </div>
+
+    <!-- Іздеу және Сұрыптау -->
+    <div class="tools">
+        <input type="text" id="searchInput" placeholder="🔍 Оқушыны іздеу..." oninput="filterTable()">
+        <select id="sortSelect" onchange="sortTable()">
+            <option value="default" id="optDefault">Әдепкі ретпен</option>
+            <option value="name" id="optName">Аты-жөні бойынша (А-Я)</option>
+            <option value="score" id="optScore">Балл бойынша (жоғары)</option>
+        </select>
+        <button class="btn btn-clear" id="btnClear" onclick="clearData()">🗑️ Тазалау</button>
+    </div>
+
+    <!-- Журнал кестесі -->
+    <table id="journalTable">
+        <thead>
+            <tr>
+                <th style="width: 50px;">№</th>
+                <th style="text-align: left;" id="thName">Оқушының аты-жөні</th>
+                <th id="thTask1">1-тапсырма</th>
+                <th id="thTask2">2-тапсырма</th>
+                <th id="thTask3">3-тапсырма</th>
+                <th id="thTask4">4-тапсырма</th>
+                <th id="thTotal">Қорытынды балл</th>
+                <th id="thAction">Әрекет</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<!-- Модальді терезе -->
+<div id="importModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:#1e293b;">📋 Excel-ден тізімді көшіріп қойыңыз</h3>
+        <p style="font-size:13px; color:#64748b;">Excel-дегі аты-жөн бағанын көшіріп (Ctrl+C), осы өріске қойыңыз (Ctrl+V):</p>
+        <textarea id="importText" placeholder="Асқаров Арман&#10;Бекболатова Аружан&#10;Серіков Дәурен"></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <input type="file" id="fileInput" accept=".csv, .txt" onchange="handleFile(this)" style="display:none;">
+            <button class="btn btn-export" onclick="document.getElementById('fileInput').click()">📁 Файл таңдау</button>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-clear" onclick="closeImportModal()">Бас тарту</button>
+                <button class="btn btn-add" onclick="processImport()">Қосу</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLang = 'kk';
+    let students = JSON.parse(localStorage.getItem('journal_students')) || [];
+
+    // Стандартты аватар суреті (SVG)
+    const defaultAvatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
+
+    const dict = {
+        kk: {
+            title: "🎓 Электрондық журнал", subtitle: "Оқушылардың үлгерімі мен білім сапасы журналы", btnPrint: "Басып шығару", stTotal: "Оқушы саны", stAvg: "Орташа балл",
+            stQuality: "Білім сапасы (8-10)", stSuccess: "Үлгерім (4-10)", placeholder: "Оқушының аты-жөні", btnAdd: "+ Оқушы қосу",
+            btnImport: "📋 Excel-ден тізім енгізу", searchPlaceholder: "🔍 Оқушыны іздеу...", optDefault: "Әдепкі ретпен",
+            optName: "Аты-жөні бойынша (А-Я)", optScore: "Балл бойынша (жоғары)", btnClear: "🗑️ Тазалау",
+            thName: "Оқушының аты-жөні", thTask1: "1-тапсырма", thTask2: "2-тапсырма", thTask3: "3-тапсырма", thTask4: "4-тапсырма",
+            thTotal: "Қорытынды балл", thAction: "Әрекет", deleteBtn: "Өшіру", alertName: "Оқушының аты-жөнін енгізіңіз!",
+            alertLimit: "4 тапсырманың қосындысы 10 балдан аспауы керек!", confirmClear: "Барлық деректерді өшіргіңіз келе ме?"
+        },
+        ru: {
+            title: "🎓 Электронный журнал", subtitle: "Журнал успеваемости и качества знаний учеников", btnPrint: "Печать", stTotal: "Кол-во учеников", stAvg: "Средний балл",
+            stQuality: "Качество знаний (8-10)", stSuccess: "Успеваемость (4-10)", placeholder: "ФИО ученика", btnAdd: "+ Добавить ученика",
+            btnImport: "📋 Вставить из Excel", searchPlaceholder: "🔍 Поиск ученика...", optDefault: "По умолчанию",
+            optName: "По ФИО (А-Я)", optScore: "По баллам (по убыванию)", btnClear: "🗑️ Очистить",
+            thName: "ФИО Ученика", thTask1: "1 задание", thTask2: "2 задание", thTask3: "3 задание", thTask4: "4 задание",
+            thTotal: "Итоговый балл", thAction: "Действие", deleteBtn: "Удалить", alertName: "Введите имя ученика!",
+            alertLimit: "Сумма баллов за 4 задания не может быть больше 10!", confirmClear: "Вы уверены, что хотите очистить все данные?"
+        }
+    };
+
+    function init() { applyLanguage(); renderTable(); }
+    function toggleLanguage() { currentLang = currentLang === 'kk' ? 'ru' : 'kk'; applyLanguage(); renderTable(); }
+
+    function applyLanguage() {
+        const l = dict[currentLang];
+        document.getElementById("title").innerText = l.title;
+        document.getElementById("subtitle").innerText = l.subtitle;
+        document.getElementById("btnPrint").innerText = l.btnPrint;
+        document.getElementById("stTotal").innerText = l.stTotal;
+        document.getElementById("stAvg").innerText = l.stAvg;
+        document.getElementById("stQuality").innerText = l.stQuality;
+        document.getElementById("stSuccess").innerText = l.stSuccess;
+        document.getElementById("studentName").placeholder = l.placeholder;
+        document.getElementById("btnAdd").innerText = l.btnAdd;
+        document.getElementById("btnImport").innerText = l.btnImport;
+        document.getElementById("searchInput").placeholder = l.searchPlaceholder;
+        document.getElementById("optDefault").innerText = l.optDefault;
+        document.getElementById("optName").innerText = l.optName;
+        document.getElementById("optScore").innerText = l.optScore;
+        document.getElementById("btnClear").innerText = l.btnClear;
+        document.getElementById("thName").innerText = l.thName;
+        document.getElementById("thTask1").innerText = l.thTask1;
+        document.getElementById("thTask2").innerText = l.thTask2;
+        document.getElementById("thTask3").innerText = l.thTask3;
+        document.getElementById("thTask4").innerText = l.thTask4;
+        document.getElementById("thTotal").innerText = l.thTotal;
+        document.getElementById("thAction").innerText = l.thAction;
+    }
+
+    function saveData() { localStorage.setItem('journal_students', JSON.stringify(students)); updateAnalytics(); }
+
+    function addStudent() {
+        const nameInput = document.getElementById("studentName");
+        const name = nameInput.value.trim();
+        if (!name) { alert(dict[currentLang].alertName); return; }
+        students.push({ id: Date.now(), name: name, grades: [0, 0, 0, 0] });
+        nameInput.value = "";
+        saveData(); renderTable();
+    }
+
+    function openImportModal() { document.getElementById("importModal").style.display = "block"; }
+    function closeImportModal() { document.getElementById("importModal").style.display = "none"; document.getElementById("importText").value = ""; }
+
+    function processImport() {
+        const text = document.getElementById("importText").value;
+        if (text) {
+            const lines = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+            lines.forEach((name, i) => {
+                students.push({ id: Date.now() + i, name: name, grades: [0, 0, 0, 0] });
+            });
+            saveData(); renderTable();
+            closeImportModal();
+        }
+    }
+
+    function handleFile(input) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById("importText").value = e.target.result;
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    function updateGrade(id, taskIndex, value) {
+        const student = students.find(s => s.id === id);
+        if (!student) return;
+        let val = parseInt(value, 10) || 0;
+        let tempGrades = [...student.grades];
+        tempGrades[taskIndex] = val;
+        if (tempGrades.reduce((a, b) => a + b, 0) > 10) {
+            alert(dict[currentLang].alertLimit);
+            renderTable(); return;
+        }
+        student.grades[taskIndex] = val;
+        saveData(); renderTable();
+    }
+
+    function deleteStudent(id) { students = students.filter(s => s.id !== id); saveData(); renderTable(); }
+    function clearData() { if (confirm(dict[currentLang].confirmClear)) { students = []; saveData(); renderTable(); } }
+
+    function renderTable() {
+        const tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+        let displayData = [...students];
+
+        const search = document.getElementById("searchInput").value.toLowerCase();
+        if (search) displayData = displayData.filter(s => s.name.toLowerCase().includes(search));
+
+        const sortType = document.getElementById("sortSelect").value;
+        if (sortType === 'name') displayData.sort((a, b) => a.name.localeCompare(b.name));
+        else if (sortType === 'score') displayData.sort((a, b) => b.grades.reduce((x, y) => x + y, 0) - a.grades.reduce((x, y) => x + y, 0));
+
+        displayData.forEach((s, index) => {
+            const total = s.grades.reduce((a, b) => a + b, 0);
+            let scoreClass = total >= 8 ? "score-high" : (total >= 4 ? "score-mid" : (total > 0 ? "score-low" : ""));
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>
+                    <div class="student-cell">
+                        <img class="avatar-img" src="${defaultAvatar}" alt="Avatar">
+                        <span>${s.name}</span>
+                    </div>
+                </td>
+                <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[0] || ''}" onchange="updateGrade(${s.id}, 0, this.value)"></td>
+                <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[1] || ''}" onchange="updateGrade(${s.id}, 1, this.value)"></td>
+                <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[2] || ''}" onchange="updateGrade(${s.id}, 2, this.value)"></td>
+                <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[3] || ''}" onchange="updateGrade(${s.id}, 3, this.value)"></td>
+                <td class="${scoreClass}">${total}</td>
+                <td><button class="delete-btn" onclick="deleteStudent(${s.id})">${dict[currentLang].deleteBtn}</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+        updateAnalytics();
+    }
+
+    function updateAnalytics() {
+        const totalCount = students.length;
+        document.getElementById("valTotal").innerText = totalCount;
+        if (totalCount === 0) {
+            document.getElementById("valAvg").innerText = "0";
+            document.getElementById("valQuality").innerText = "0%";
+            document.getElementById("valSuccess").innerText = "0%";
+            return;
+        }
+        let totalSum = 0, qualityCount = 0, successCount = 0;
+        students.forEach(s => {
+            let sum = s.grades.reduce((a, b) => a + b, 0);
+            totalSum += sum;
+            if (sum >= 8) qualityCount++;
+            if (sum >= 4) successCount++;
+        });
+        document.getElementById("valAvg").innerText = (totalSum / totalCount).toFixed(1);
+        document.getElementById("valQuality").innerText = Math.round((qualityCount / totalCount) * 100) + "%";
+        document.getElementById("valSuccess").innerText = Math.round((successCount / totalCount) * 100) + "%";
+    }
+
+    function filterTable() { renderTable(); }
+    function sortTable() { renderTable(); }
+
+    function exportToCSV() {
+        let csv = "\uFEFF№;ФИО;1 тапсырма;2 тапсырма;3 тапсырма;4 тапсырма;Қорытынды балл\n";
+        students.forEach((s, i) => {
+            csv += `${i + 1};"${s.name}";${s.grades[0]};${s.grades[1]};${s.grades[2]};${s.grades[3]};${s.grades.reduce((a, b) => a + b, 0)}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `Journal_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click();
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
