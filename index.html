@@ -45,6 +45,7 @@
         .btn-export { background: #0ea5e9; color: white; }
         .btn-print { background: #8b5cf6; color: white; }
         .btn-import { background: #f59e0b; color: white; }
+        .btn-manage { background: #475569; color: white; }
         .btn-clear { background: #ef4444; color: white; }
         .btn:hover { transform: translateY(-1px); }
 
@@ -80,6 +81,11 @@
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
         .modal-content { background: white; margin: 8% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .modal-content textarea { width: 100%; height: 140px; margin: 12px 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; }
+        .manage-list { max-height: 360px; overflow-y: auto; margin: 15px 0; border: 1px solid #e2e8f0; border-radius: 10px; }
+        .manage-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 12px; border-bottom: 1px solid #e2e8f0; }
+        .manage-item:last-child { border-bottom: none; }
+        .manage-name { font-weight: 600; color: #1e293b; }
+        .manage-empty { padding: 24px; text-align: center; color: #64748b; }
 
         @media print {
             .btn, .controls, .tools, .header-actions, .class-panel label, .class-panel select, .delete-btn, th:last-child, td:last-child { display: none !important; }
@@ -136,6 +142,7 @@
         <input type="text" id="studentName" placeholder="Оқушының аты-жөні">
         <button class="btn btn-add" id="btnAdd" onclick="addStudent()">+ Оқушы қосу</button>
         <button class="btn btn-import" id="btnImport" onclick="openImportModal()">📋 Excel-ден тізім енгізу</button>
+        <button class="btn btn-manage" id="btnManage" onclick="openManageModal()">👥 Оқушылар тізімін басқару</button>
     </div>
 
     <!-- Іздеу және Сұрыптау -->
@@ -184,6 +191,17 @@
     </div>
 </div>
 
+<!-- Оқушылар тізімін басқару терезесі -->
+<div id="manageModal" class="modal">
+    <div class="modal-content">
+        <h3 id="manageTitle" style="margin-top:0; color:#1e293b;">👥 Оқушылар тізімін басқару</h3>
+        <div id="manageList" class="manage-list"></div>
+        <div style="display:flex; justify-content:flex-end;">
+            <button class="btn btn-manage" id="manageClose" onclick="closeManageModal()">Жабу</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentLang = 'kk';
     const availableClasses = ['5', '9', '10', '11'];
@@ -211,20 +229,20 @@
         kk: {
             title: "🎓 Электрондық журнал", subtitle: "Оқушылардың үлгерімі мен білім сапасы журналы", classLabel: "Сыныпты таңдаңыз:", classJournal: "сынып журналы", btnPrint: "Басып шығару", stTotal: "Оқушы саны", stAvg: "Орташа балл",
             stQuality: "Білім сапасы (8-10)", stSuccess: "Үлгерім (4-10)", placeholder: "Оқушының аты-жөні", btnAdd: "+ Оқушы қосу",
-            btnImport: "📋 Excel-ден тізім енгізу", searchPlaceholder: "🔍 Оқушыны іздеу...", optDefault: "Әдепкі ретпен",
+            btnImport: "📋 Excel-ден тізім енгізу", btnManage: "👥 Оқушылар тізімін басқару", manageTitle: "👥 Оқушылар тізімін басқару", manageClose: "Жабу", manageEmpty: "Бұл сыныпта оқушы жоқ", removeFromList: "Тізімнен алып тастау", searchPlaceholder: "🔍 Оқушыны іздеу...", optDefault: "Әдепкі ретпен",
             optName: "Аты-жөні бойынша (А-Я)", optScore: "Балл бойынша (жоғары)", btnClear: "🧹 Барлық балды тазалау",
             thName: "Оқушының аты-жөні", thTask1: "1-тапсырма", thTask2: "2-тапсырма", thTask3: "3-тапсырма", thTask4: "4-тапсырма",
-            thTotal: "Қорытынды балл", thAction: "Әрекет", resetBtn: "Баллды тазалау", deleteBtn: "Оқушыны жою", alertName: "Оқушының аты-жөнін енгізіңіз!",
-            alertLimit: "4 тапсырманың қосындысы 10 балдан аспауы керек!", confirmClear: "Осы сыныптағы барлық тапсырма балдарын тазалайсыз ба?", confirmClearStudent: "Осы оқушының тапсырма балдарын тазалайсыз ба?", confirmDeleteStudent: "Осы оқушыны тізімнен толық жоясыз ба?"
+            thTotal: "Қорытынды балл", thAction: "Әрекет", resetBtn: "Баллды тазалау", alertName: "Оқушының аты-жөнін енгізіңіз!",
+            alertLimit: "4 тапсырманың қосындысы 10 балдан аспауы керек!", confirmClear: "Осы сыныптағы барлық тапсырма балдарын тазалайсыз ба?", confirmClearStudent: "Осы оқушының тапсырма балдарын тазалайсыз ба?", confirmRemoveStudent: "Осы оқушыны тізімнен алып тастайсыз ба?"
         },
         ru: {
             title: "🎓 Электронный журнал", subtitle: "Журнал успеваемости и качества знаний учеников", classLabel: "Выберите класс:", classJournal: "журнал класса", btnPrint: "Печать", stTotal: "Кол-во учеников", stAvg: "Средний балл",
             stQuality: "Качество знаний (8-10)", stSuccess: "Успеваемость (4-10)", placeholder: "ФИО ученика", btnAdd: "+ Добавить ученика",
-            btnImport: "📋 Вставить из Excel", searchPlaceholder: "🔍 Поиск ученика...", optDefault: "По умолчанию",
+            btnImport: "📋 Вставить из Excel", btnManage: "👥 Управление списком", manageTitle: "👥 Управление списком учеников", manageClose: "Закрыть", manageEmpty: "В этом классе нет учеников", removeFromList: "Убрать из списка", searchPlaceholder: "🔍 Поиск ученика...", optDefault: "По умолчанию",
             optName: "По ФИО (А-Я)", optScore: "По баллам (по убыванию)", btnClear: "🧹 Очистить все баллы",
             thName: "ФИО Ученика", thTask1: "1 задание", thTask2: "2 задание", thTask3: "3 задание", thTask4: "4 задание",
-            thTotal: "Итоговый балл", thAction: "Действие", resetBtn: "Очистить баллы", deleteBtn: "Удалить ученика", alertName: "Введите имя ученика!",
-            alertLimit: "Сумма баллов за 4 задания не может быть больше 10!", confirmClear: "Очистить все баллы заданий в этом классе?", confirmClearStudent: "Очистить баллы заданий этого ученика?", confirmDeleteStudent: "Полностью удалить этого ученика из списка?"
+            thTotal: "Итоговый балл", thAction: "Действие", resetBtn: "Очистить баллы", alertName: "Введите имя ученика!",
+            alertLimit: "Сумма баллов за 4 задания не может быть больше 10!", confirmClear: "Очистить все баллы заданий в этом классе?", confirmClearStudent: "Очистить баллы заданий этого ученика?", confirmRemoveStudent: "Убрать этого ученика из списка?"
         }
     };
 
@@ -270,6 +288,9 @@
         document.getElementById("studentName").placeholder = l.placeholder;
         document.getElementById("btnAdd").innerText = l.btnAdd;
         document.getElementById("btnImport").innerText = l.btnImport;
+        document.getElementById("btnManage").innerText = l.btnManage;
+        document.getElementById("manageTitle").innerText = l.manageTitle;
+        document.getElementById("manageClose").innerText = l.manageClose;
         document.getElementById("searchInput").placeholder = l.searchPlaceholder;
         document.getElementById("optDefault").innerText = l.optDefault;
         document.getElementById("optName").innerText = l.optName;
@@ -345,12 +366,45 @@
         renderTable();
     }
 
-    function deleteStudent(id) {
+    function openManageModal() {
+        renderManageList();
+        document.getElementById('manageModal').style.display = 'block';
+    }
+
+    function closeManageModal() { document.getElementById('manageModal').style.display = 'none'; }
+
+    function renderManageList() {
+        const list = document.getElementById('manageList');
+        list.innerHTML = '';
+        if (students.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'manage-empty';
+            empty.textContent = dict[currentLang].manageEmpty;
+            list.appendChild(empty);
+            return;
+        }
+        students.forEach((student, index) => {
+            const item = document.createElement('div');
+            item.className = 'manage-item';
+            const name = document.createElement('span');
+            name.className = 'manage-name';
+            name.textContent = `${index + 1}. ${student.name}`;
+            const button = document.createElement('button');
+            button.className = 'delete-btn';
+            button.textContent = dict[currentLang].removeFromList;
+            button.onclick = () => removeStudentFromList(student.id);
+            item.append(name, button);
+            list.appendChild(item);
+        });
+    }
+
+    function removeStudentFromList(id) {
         const student = students.find(s => s.id === id);
-        if (!student || !confirm(dict[currentLang].confirmDeleteStudent)) return;
+        if (!student || !confirm(dict[currentLang].confirmRemoveStudent)) return;
         students = students.filter(s => s.id !== id);
         saveData();
         renderTable();
+        renderManageList();
     }
 
     function clearData() {
@@ -389,12 +443,7 @@
                 <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[2] || ''}" onchange="updateGrade(${s.id}, 2, this.value)"></td>
                 <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[3] || ''}" onchange="updateGrade(${s.id}, 3, this.value)"></td>
                 <td class="${scoreClass}">${total}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="reset-btn" onclick="clearStudentGrades(${s.id})">${dict[currentLang].resetBtn}</button>
-                        <button class="delete-btn" onclick="deleteStudent(${s.id})">${dict[currentLang].deleteBtn}</button>
-                    </div>
-                </td>
+                <td><button class="reset-btn" onclick="clearStudentGrades(${s.id})">${dict[currentLang].resetBtn}</button></td>
             `;
             tbody.appendChild(row);
         });
