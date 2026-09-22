@@ -27,6 +27,11 @@
         .header-text p { margin: 5px 0 0 0; opacity: 0.85; font-size: 14px; }
         .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
+        .class-panel { display: flex; align-items: center; gap: 12px; margin: -5px 0 25px; padding: 14px 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; flex-wrap: wrap; }
+        .class-panel label { color: #1e3c72; font-weight: 700; }
+        .class-panel select { min-width: 170px; background: #fff; color: #1e293b; font-weight: 700; }
+        .current-class-badge { margin-left: auto; padding: 8px 14px; border-radius: 999px; background: #2a5298; color: #fff; font-weight: 700; }
+
         .analytics-bar { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
         .stat-card { flex: 1; min-width: 160px; background: #f8fafc; border-top: 4px solid #2a5298; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .stat-card h4 { margin: 0 0 6px 0; color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; }
@@ -74,7 +79,9 @@
         .modal-content textarea { width: 100%; height: 140px; margin: 12px 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; }
 
         @media print {
-            .btn, .controls, .tools, .header-actions, .delete-btn, th:last-child, td:last-child { display: none !important; }
+            .btn, .controls, .tools, .header-actions, .class-panel label, .class-panel select, .delete-btn, th:last-child, td:last-child { display: none !important; }
+            .class-panel { justify-content: center; border: none; background: white; margin-bottom: 12px; }
+            .current-class-badge { margin-left: 0; color: #1e3c72; background: white; font-size: 18px; }
             body { background: white; padding: 0; }
             .container { box-shadow: none; max-width: 100%; padding: 0; }
             .header-banner { background: #1e3c72 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -99,6 +106,18 @@
             <button class="btn btn-print" onclick="window.print()">🖨️ <span id="btnPrint">Басып шығару</span></button>
             <button class="btn btn-export" onclick="exportToCSV()">📥 Excel (CSV)</button>
         </div>
+    </div>
+
+    <!-- Сыныпты таңдау -->
+    <div class="class-panel">
+        <label for="classSelect" id="classLabel">Сыныпты таңдаңыз:</label>
+        <select id="classSelect" onchange="switchClass(this.value)">
+            <option value="5">5-сынып</option>
+            <option value="9">9-сынып</option>
+            <option value="10">10-сынып</option>
+            <option value="11">11-сынып</option>
+        </select>
+        <span class="current-class-badge" id="currentClassBadge">9-сынып журналы</span>
     </div>
 
     <!-- Аналитика карточкалары -->
@@ -164,14 +183,30 @@
 
 <script>
     let currentLang = 'kk';
-    let students = JSON.parse(localStorage.getItem('journal_students')) || [];
+    const availableClasses = ['5', '9', '10', '11'];
+    let currentClass = localStorage.getItem('journal_active_class') || '9';
+    if (!availableClasses.includes(currentClass)) currentClass = '9';
+
+    function storageKey(className) { return `journal_students_${className}`; }
+
+    // Бұрынғы бір сыныптық журналдағы деректерді 9-сыныпқа бір рет көшіру
+    if (!localStorage.getItem(storageKey('9')) && localStorage.getItem('journal_students')) {
+        localStorage.setItem(storageKey('9'), localStorage.getItem('journal_students'));
+    }
+
+    function loadStudents(className) {
+        try { return JSON.parse(localStorage.getItem(storageKey(className))) || []; }
+        catch (e) { return []; }
+    }
+
+    let students = loadStudents(currentClass);
 
     // Стандартты аватар суреті (SVG)
     const defaultAvatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
 
     const dict = {
         kk: {
-            title: "🎓 Электрондық журнал", subtitle: "Оқушылардың үлгерімі мен білім сапасы журналы", btnPrint: "Басып шығару", stTotal: "Оқушы саны", stAvg: "Орташа балл",
+            title: "🎓 Электрондық журнал", subtitle: "Оқушылардың үлгерімі мен білім сапасы журналы", classLabel: "Сыныпты таңдаңыз:", classJournal: "сынып журналы", btnPrint: "Басып шығару", stTotal: "Оқушы саны", stAvg: "Орташа балл",
             stQuality: "Білім сапасы (8-10)", stSuccess: "Үлгерім (4-10)", placeholder: "Оқушының аты-жөні", btnAdd: "+ Оқушы қосу",
             btnImport: "📋 Excel-ден тізім енгізу", searchPlaceholder: "🔍 Оқушыны іздеу...", optDefault: "Әдепкі ретпен",
             optName: "Аты-жөні бойынша (А-Я)", optScore: "Балл бойынша (жоғары)", btnClear: "🗑️ Тазалау",
@@ -180,7 +215,7 @@
             alertLimit: "4 тапсырманың қосындысы 10 балдан аспауы керек!", confirmClear: "Барлық деректерді өшіргіңіз келе ме?"
         },
         ru: {
-            title: "🎓 Электронный журнал", subtitle: "Журнал успеваемости и качества знаний учеников", btnPrint: "Печать", stTotal: "Кол-во учеников", stAvg: "Средний балл",
+            title: "🎓 Электронный журнал", subtitle: "Журнал успеваемости и качества знаний учеников", classLabel: "Выберите класс:", classJournal: "журнал класса", btnPrint: "Печать", stTotal: "Кол-во учеников", stAvg: "Средний балл",
             stQuality: "Качество знаний (8-10)", stSuccess: "Успеваемость (4-10)", placeholder: "ФИО ученика", btnAdd: "+ Добавить ученика",
             btnImport: "📋 Вставить из Excel", searchPlaceholder: "🔍 Поиск ученика...", optDefault: "По умолчанию",
             optName: "По ФИО (А-Я)", optScore: "По баллам (по убыванию)", btnClear: "🗑️ Очистить",
@@ -190,13 +225,40 @@
         }
     };
 
-    function init() { applyLanguage(); renderTable(); }
+    function init() {
+        document.getElementById('classSelect').value = currentClass;
+        applyLanguage();
+        renderTable();
+    }
     function toggleLanguage() { currentLang = currentLang === 'kk' ? 'ru' : 'kk'; applyLanguage(); renderTable(); }
+
+    function updateClassHeading() {
+        const className = currentLang === 'kk' ? `${currentClass}-сынып журналы` : `${currentClass} ${dict[currentLang].classJournal}`;
+        document.getElementById('currentClassBadge').innerText = className;
+        document.title = `${currentClass}-сынып — ${dict[currentLang].title.replace('🎓 ', '')}`;
+    }
+
+    function switchClass(className) {
+        if (!availableClasses.includes(className)) return;
+        currentClass = className;
+        localStorage.setItem('journal_active_class', currentClass);
+        students = loadStudents(currentClass);
+        document.getElementById('studentName').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('sortSelect').value = 'default';
+        updateClassHeading();
+        renderTable();
+    }
 
     function applyLanguage() {
         const l = dict[currentLang];
         document.getElementById("title").innerText = l.title;
         document.getElementById("subtitle").innerText = l.subtitle;
+        document.getElementById("classLabel").innerText = l.classLabel;
+        [...document.getElementById('classSelect').options].forEach(option => {
+            option.textContent = currentLang === 'kk' ? `${option.value}-сынып` : `${option.value} класс`;
+        });
+        updateClassHeading();
         document.getElementById("btnPrint").innerText = l.btnPrint;
         document.getElementById("stTotal").innerText = l.stTotal;
         document.getElementById("stAvg").innerText = l.stAvg;
@@ -219,7 +281,7 @@
         document.getElementById("thAction").innerText = l.thAction;
     }
 
-    function saveData() { localStorage.setItem('journal_students', JSON.stringify(students)); updateAnalytics(); }
+    function saveData() { localStorage.setItem(storageKey(currentClass), JSON.stringify(students)); updateAnalytics(); }
 
     function addStudent() {
         const nameInput = document.getElementById("studentName");
@@ -341,7 +403,7 @@
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = `Journal_${new Date().toISOString().slice(0,10)}.csv`;
+        link.download = `Journal_${currentClass}_synyp_${new Date().toISOString().slice(0,10)}.csv`;
         link.click();
     }
 
