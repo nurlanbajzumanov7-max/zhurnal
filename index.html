@@ -209,19 +209,19 @@
             title: "🎓 Электрондық журнал", subtitle: "Оқушылардың үлгерімі мен білім сапасы журналы", classLabel: "Сыныпты таңдаңыз:", classJournal: "сынып журналы", btnPrint: "Басып шығару", stTotal: "Оқушы саны", stAvg: "Орташа балл",
             stQuality: "Білім сапасы (8-10)", stSuccess: "Үлгерім (4-10)", placeholder: "Оқушының аты-жөні", btnAdd: "+ Оқушы қосу",
             btnImport: "📋 Excel-ден тізім енгізу", searchPlaceholder: "🔍 Оқушыны іздеу...", optDefault: "Әдепкі ретпен",
-            optName: "Аты-жөні бойынша (А-Я)", optScore: "Балл бойынша (жоғары)", btnClear: "🗑️ Тазалау",
+            optName: "Аты-жөні бойынша (А-Я)", optScore: "Балл бойынша (жоғары)", btnClear: "🧹 Барлық балды тазалау",
             thName: "Оқушының аты-жөні", thTask1: "1-тапсырма", thTask2: "2-тапсырма", thTask3: "3-тапсырма", thTask4: "4-тапсырма",
-            thTotal: "Қорытынды балл", thAction: "Әрекет", deleteBtn: "Өшіру", alertName: "Оқушының аты-жөнін енгізіңіз!",
-            alertLimit: "4 тапсырманың қосындысы 10 балдан аспауы керек!", confirmClear: "Барлық деректерді өшіргіңіз келе ме?"
+            thTotal: "Қорытынды балл", thAction: "Әрекет", deleteBtn: "Баллды тазалау", alertName: "Оқушының аты-жөнін енгізіңіз!",
+            alertLimit: "4 тапсырманың қосындысы 10 балдан аспауы керек!", confirmClear: "Осы сыныптағы барлық тапсырма балдарын тазалайсыз ба?", confirmClearStudent: "Осы оқушының тапсырма балдарын тазалайсыз ба?"
         },
         ru: {
             title: "🎓 Электронный журнал", subtitle: "Журнал успеваемости и качества знаний учеников", classLabel: "Выберите класс:", classJournal: "журнал класса", btnPrint: "Печать", stTotal: "Кол-во учеников", stAvg: "Средний балл",
             stQuality: "Качество знаний (8-10)", stSuccess: "Успеваемость (4-10)", placeholder: "ФИО ученика", btnAdd: "+ Добавить ученика",
             btnImport: "📋 Вставить из Excel", searchPlaceholder: "🔍 Поиск ученика...", optDefault: "По умолчанию",
-            optName: "По ФИО (А-Я)", optScore: "По баллам (по убыванию)", btnClear: "🗑️ Очистить",
+            optName: "По ФИО (А-Я)", optScore: "По баллам (по убыванию)", btnClear: "🧹 Очистить все баллы",
             thName: "ФИО Ученика", thTask1: "1 задание", thTask2: "2 задание", thTask3: "3 задание", thTask4: "4 задание",
-            thTotal: "Итоговый балл", thAction: "Действие", deleteBtn: "Удалить", alertName: "Введите имя ученика!",
-            alertLimit: "Сумма баллов за 4 задания не может быть больше 10!", confirmClear: "Вы уверены, что хотите очистить все данные?"
+            thTotal: "Итоговый балл", thAction: "Действие", deleteBtn: "Очистить баллы", alertName: "Введите имя ученика!",
+            alertLimit: "Сумма баллов за 4 задания не может быть больше 10!", confirmClear: "Очистить все баллы заданий в этом классе?", confirmClearStudent: "Очистить баллы заданий этого ученика?"
         }
     };
 
@@ -332,8 +332,20 @@
         saveData(); renderTable();
     }
 
-    function deleteStudent(id) { students = students.filter(s => s.id !== id); saveData(); renderTable(); }
-    function clearData() { if (confirm(dict[currentLang].confirmClear)) { students = []; saveData(); renderTable(); } }
+    function clearStudentGrades(id) {
+        const student = students.find(s => s.id === id);
+        if (!student || !confirm(dict[currentLang].confirmClearStudent)) return;
+        student.grades = [0, 0, 0, 0];
+        saveData();
+        renderTable();
+    }
+
+    function clearData() {
+        if (!confirm(dict[currentLang].confirmClear)) return;
+        students.forEach(student => { student.grades = [0, 0, 0, 0]; });
+        saveData();
+        renderTable();
+    }
 
     function renderTable() {
         const tbody = document.getElementById("tableBody");
@@ -364,7 +376,7 @@
                 <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[2] || ''}" onchange="updateGrade(${s.id}, 2, this.value)"></td>
                 <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[3] || ''}" onchange="updateGrade(${s.id}, 3, this.value)"></td>
                 <td class="${scoreClass}">${total}</td>
-                <td><button class="delete-btn" onclick="deleteStudent(${s.id})">${dict[currentLang].deleteBtn}</button></td>
+                <td><button class="delete-btn" onclick="clearStudentGrades(${s.id})">${dict[currentLang].deleteBtn}</button></td>
             `;
             tbody.appendChild(row);
         });
