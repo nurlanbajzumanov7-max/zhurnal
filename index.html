@@ -70,7 +70,10 @@
         .score-mid { background-color: #fef3c7 !important; color: #92400e; font-weight: bold; border-radius: 6px; }
         .score-low { background-color: #fee2e2 !important; color: #991b1b; font-weight: bold; border-radius: 6px; }
 
-        .delete-btn { background: #fee2e2; color: #991b1b; border: none; padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .action-buttons { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+        .reset-btn { background: #fef3c7; color: #92400e; border: none; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .reset-btn:hover { background: #fde68a; }
+        .delete-btn { background: #fee2e2; color: #991b1b; border: none; padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
         .delete-btn:hover { background: #fca5a5; }
 
         /* Модальді терезе */
@@ -211,8 +214,8 @@
             btnImport: "📋 Excel-ден тізім енгізу", searchPlaceholder: "🔍 Оқушыны іздеу...", optDefault: "Әдепкі ретпен",
             optName: "Аты-жөні бойынша (А-Я)", optScore: "Балл бойынша (жоғары)", btnClear: "🧹 Барлық балды тазалау",
             thName: "Оқушының аты-жөні", thTask1: "1-тапсырма", thTask2: "2-тапсырма", thTask3: "3-тапсырма", thTask4: "4-тапсырма",
-            thTotal: "Қорытынды балл", thAction: "Әрекет", deleteBtn: "Баллды тазалау", alertName: "Оқушының аты-жөнін енгізіңіз!",
-            alertLimit: "4 тапсырманың қосындысы 10 балдан аспауы керек!", confirmClear: "Осы сыныптағы барлық тапсырма балдарын тазалайсыз ба?", confirmClearStudent: "Осы оқушының тапсырма балдарын тазалайсыз ба?"
+            thTotal: "Қорытынды балл", thAction: "Әрекет", resetBtn: "Баллды тазалау", deleteBtn: "Оқушыны жою", alertName: "Оқушының аты-жөнін енгізіңіз!",
+            alertLimit: "4 тапсырманың қосындысы 10 балдан аспауы керек!", confirmClear: "Осы сыныптағы барлық тапсырма балдарын тазалайсыз ба?", confirmClearStudent: "Осы оқушының тапсырма балдарын тазалайсыз ба?", confirmDeleteStudent: "Осы оқушыны тізімнен толық жоясыз ба?"
         },
         ru: {
             title: "🎓 Электронный журнал", subtitle: "Журнал успеваемости и качества знаний учеников", classLabel: "Выберите класс:", classJournal: "журнал класса", btnPrint: "Печать", stTotal: "Кол-во учеников", stAvg: "Средний балл",
@@ -220,8 +223,8 @@
             btnImport: "📋 Вставить из Excel", searchPlaceholder: "🔍 Поиск ученика...", optDefault: "По умолчанию",
             optName: "По ФИО (А-Я)", optScore: "По баллам (по убыванию)", btnClear: "🧹 Очистить все баллы",
             thName: "ФИО Ученика", thTask1: "1 задание", thTask2: "2 задание", thTask3: "3 задание", thTask4: "4 задание",
-            thTotal: "Итоговый балл", thAction: "Действие", deleteBtn: "Очистить баллы", alertName: "Введите имя ученика!",
-            alertLimit: "Сумма баллов за 4 задания не может быть больше 10!", confirmClear: "Очистить все баллы заданий в этом классе?", confirmClearStudent: "Очистить баллы заданий этого ученика?"
+            thTotal: "Итоговый балл", thAction: "Действие", resetBtn: "Очистить баллы", deleteBtn: "Удалить ученика", alertName: "Введите имя ученика!",
+            alertLimit: "Сумма баллов за 4 задания не может быть больше 10!", confirmClear: "Очистить все баллы заданий в этом классе?", confirmClearStudent: "Очистить баллы заданий этого ученика?", confirmDeleteStudent: "Полностью удалить этого ученика из списка?"
         }
     };
 
@@ -342,6 +345,14 @@
         renderTable();
     }
 
+    function deleteStudent(id) {
+        const student = students.find(s => s.id === id);
+        if (!student || !confirm(dict[currentLang].confirmDeleteStudent)) return;
+        students = students.filter(s => s.id !== id);
+        saveData();
+        renderTable();
+    }
+
     function clearData() {
         if (!confirm(dict[currentLang].confirmClear)) return;
         students.forEach(student => { student.grades = [0, 0, 0, 0]; });
@@ -378,7 +389,12 @@
                 <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[2] || ''}" onchange="updateGrade(${s.id}, 2, this.value)"></td>
                 <td><input type="number" min="0" max="10" class="grade-input" value="${s.grades[3] || ''}" onchange="updateGrade(${s.id}, 3, this.value)"></td>
                 <td class="${scoreClass}">${total}</td>
-                <td><button class="delete-btn" onclick="clearStudentGrades(${s.id})">${dict[currentLang].deleteBtn}</button></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="reset-btn" onclick="clearStudentGrades(${s.id})">${dict[currentLang].resetBtn}</button>
+                        <button class="delete-btn" onclick="deleteStudent(${s.id})">${dict[currentLang].deleteBtn}</button>
+                    </div>
+                </td>
             `;
             tbody.appendChild(row);
         });
