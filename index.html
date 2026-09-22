@@ -336,6 +336,8 @@
         const student = students.find(s => s.id === id);
         if (!student || !confirm(dict[currentLang].confirmClearStudent)) return;
         student.grades = [0, 0, 0, 0];
+        // Балл бойынша сұрыптау кезінде оқушы төменге ауысып, жойылғандай көрінбеуі үшін
+        document.getElementById('sortSelect').value = 'default';
         saveData();
         renderTable();
     }
